@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <link rel="stylesheet" href="./css/reset.css">
+    <title>ArtJS</title>
+</head>
+<body>
+    <script src="js/art.js"></script>
+    <h1>Hello, I am Art.js fraemwork!</h1>
+    <div id="app">
+        {{message_1}} and I feel myself: {{message_2}}
+    </div>
+    <script>
+        let app = Art.createComponent({
+            el: '#app',
+            data: {
+                message_1: 'I am \'#app\'',
+                message_2: 'very wondefull'
+            }
+        });
+    </script>
+</body>
+</html>
