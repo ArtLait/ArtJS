@@ -1,0 +1,37 @@
+{
+  "name": "art",
+  "version": "1.0.0",
+  "description": "ArtJs",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "dependencies": {
+    "requirejs": "^2.3.5",
+    "webpack": "^4.20.2"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ArtLait/ArtJS.git"
+  },
+  "keywords": [
+    "ArtJs"
+  ],
+  "author": "ArtLait",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/ArtLait/ArtJS/issues"
+  },
+  "homepage": "https://github.com/ArtLait/ArtJS#readme",
+  "devDependencies": {
+    "clean-webpack-plugin": "^0.1.19",
+    "css-loader": "^1.0.0",
+    "file-loader": "^2.0.0",
+    "html-loader": "^0.5.5",
+    "html-webpack-plugin": "^3.2.0",
+    "style-loader": "^0.23.1",
+    "to-string-loader": "^1.1.5",
+    "webpack": "4.20.2",
+    "webpack-cli": "^3.1.2"
+  }
+}
