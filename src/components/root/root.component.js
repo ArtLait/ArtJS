@@ -1,8 +1,9 @@
-console.log('root.component.js');
-let app = Art.createComponent({
+import html from './root.component.html';
+
+let component = {
     selector: 'root',
-    templateUrl: '',
-    el: '#root',
+    template: html,
+    id: '#root',
     data: {
         message_1: 'I am \'#app\'',
         message_2: 'very wondefull'
@@ -15,4 +16,6 @@ let app = Art.createComponent({
             }, 500);
         }
     }
-});
+}
+
+export default component;

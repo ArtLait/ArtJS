@@ -1,7 +1,16 @@
-function Component(option) {
+export function Component(option, container) {
     this.option = option;
+    this.container = container;
+    this.init();
     this.binding();
     option.methods.init.call(option.data);
+}
+
+Component.prototype.init = function() {
+    let newDiv = document.createElement('div');
+    newDiv.innerHTML = this.option.template;
+    newDiv.id = this.option.id;
+    this.container.appendChild(newDiv);
 }
 
 Component.prototype.binding = function() {
@@ -25,7 +34,7 @@ Component.prototype.binding = function() {
 
 Component.prototype.render = function() {
         let option = this.option;
-        let el = document.querySelector(option.el);
+        let el = document.getElementById(option.id);
         console.log('option', option);
         if (!option.innerHTML) option.innerHTML = el.innerHTML
         let innerHTML = option.innerHTML;

@@ -1,8 +1,8 @@
 import someName from './css/reset.css';
+import rootComponent from './components/root/root.component';
+
 let ArtModule = Art.createModule({
     el: '#app'
 });
 
-console.log('someName', someName);
-
-ArtModule.addComponent('components/root/root.component');
+ArtModule.addComponent(rootComponent);
