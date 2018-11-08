@@ -3,7 +3,7 @@ const HtmlWebpackPlugin = require('html-webpack-plugin');
 const CleanWebpackPlugin = require('clean-webpack-plugin');
 
 module.exports = {
-    entry: './src/main.js',
+    entry: ['.\\src\\js\\art.js', '.\\src\\main.js'],
     output: {
         path: path.resolve(__dirname, 'dist'),
         filename: 'bundle.js'
@@ -33,13 +33,15 @@ module.exports = {
             {
               test: /\.html$/,
               loader: 'html-loader',
-              exclude: path.resolve(__dirname, 'src/index.html')
+              exclude: path.resolve(__dirname, 'src\\index.html')
             }
           ]
     },
     plugins: [
         new HtmlWebpackPlugin({
-          template: 'src/index.html'
+          template: '.\\src\\index.html',
+          filename: 'index.html',
+          inject: true
         }),
         new CleanWebpackPlugin(['dist'])
     ]
