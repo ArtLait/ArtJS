@@ -100,7 +100,7 @@ function Module(option) {
 
 Module.prototype.addComponent = function(option) {
     let component = new __WEBPACK_IMPORTED_MODULE_0__art_component__["a" /* Component */](option, this.moduleContainer);
-    this.components.push(component);
+    this.components = component;
 }
 
 Module.prototype.init = function() {
@@ -114,6 +114,7 @@ Module.prototype.init = function() {
                 return this._components
             },
             set: function(component) {
+                console.log('Sets into module!');
                 this._components.push(component);
                 component.render();
             }
@@ -136,7 +137,7 @@ Module.prototype.render = function() {
 function Component(option, container) {
     this.option = option;
     this.container = container;
-    this.init();
+    this.notRendered = true;
     this.binding();
     option.methods.init.call(option.data);
 }
@@ -168,17 +169,21 @@ Component.prototype.binding = function() {
 }
 
 Component.prototype.render = function() {
+        if (this.notRendered) {
+            this.init();
+            this.notRendered = false;
+        }
         let option = this.option;
         let el = document.getElementById(option.id);
         console.log('option', option);
-        if (!option.innerHTML) option.innerHTML = el.innerHTML
+        if (!option.innerHTML) option.innerHTML = el.innerHTML;
         let innerHTML = option.innerHTML;
         let matches = innerHTML.match(/\{{2}\w*\}{2}/g);
         if (matches) {
             matches.forEach((match, mI) => {
                 let prop = match.replace(/\{|\}/g, '');
                 innerHTML = innerHTML.replace(new RegExp(match), option.data[prop]);
-            }) 
+            })
         };
         el.innerHTML = innerHTML;
 }

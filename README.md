@@ -8,7 +8,7 @@ Getting started
     - cd art
     - webpack -w
 3) Need to start simple app for testing
-   - webpack -w
+   - webpack -w (in the root directory)
 4) Need to start hosting app for testing
     (You can do it as you want, but the simplest way is:
     - npm install http-server -g

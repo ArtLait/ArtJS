@@ -1,7 +1,7 @@
 export function Component(option, container) {
     this.option = option;
     this.container = container;
-    this.init();
+    this.notRendered = true;
     this.binding();
     option.methods.init.call(option.data);
 }
@@ -33,17 +33,21 @@ Component.prototype.binding = function() {
 }
 
 Component.prototype.render = function() {
+        if (this.notRendered) {
+            this.init();
+            this.notRendered = false;
+        }
         let option = this.option;
         let el = document.getElementById(option.id);
         console.log('option', option);
-        if (!option.innerHTML) option.innerHTML = el.innerHTML
+        if (!option.innerHTML) option.innerHTML = el.innerHTML;
         let innerHTML = option.innerHTML;
         let matches = innerHTML.match(/\{{2}\w*\}{2}/g);
         if (matches) {
             matches.forEach((match, mI) => {
                 let prop = match.replace(/\{|\}/g, '');
                 innerHTML = innerHTML.replace(new RegExp(match), option.data[prop]);
-            }) 
+            })
         };
         el.innerHTML = innerHTML;
 }

@@ -8,7 +8,7 @@ export function Module(option) {
 
 Module.prototype.addComponent = function(option) {
     let component = new Component(option, this.moduleContainer);
-    this.components.push(component);
+    this.components = component;
 }
 
 Module.prototype.init = function() {
@@ -22,6 +22,7 @@ Module.prototype.init = function() {
                 return this._components
             },
             set: function(component) {
+                console.log('Sets into module!');
                 this._components.push(component);
                 component.render();
             }
