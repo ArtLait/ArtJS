@@ -12,6 +12,10 @@ Getting started
 4) Need to start hosting app for testing
     (You can do it as you want, but the simplest way is:
     - npm install http-server -g
-    - cd dist
+    - cd docs
     - http-server
     - http://{you api}:8080)
+
+Demo:
+
+https://artlait.github.io/ArtJS/
