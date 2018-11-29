@@ -114,7 +114,6 @@ Module.prototype.init = function() {
                 return this._components
             },
             set: function(component) {
-                console.log('Sets into module!');
                 this._components.push(component);
                 component.render();
             }
@@ -134,22 +133,25 @@ Module.prototype.render = function() {
 
 "use strict";
 /* harmony export (immutable) */ __webpack_exports__["a"] = Component;
-function Component(option, container) {
+function Component(option, parentElement) {
     this.option = option;
-    this.container = container;
+    this.parentElement = parentElement;
     this.notRendered = true;
-    this.binding();
+    this.inputs = {};
+    this.createMatches();
+    this.jsBinding();
     option.methods.init.call(option.data);
 }
 
-Component.prototype.init = function() {
-    let newDiv = document.createElement('div');
-    newDiv.innerHTML = this.option.template;
-    newDiv.id = this.option.id;
-    this.container.appendChild(newDiv);
+Component.prototype.createContainer = function() {
+    let container = document.createElement('div');
+    container.innerHTML = this.option.template;
+    container.id = this.option.id;
+    this.parentElement.appendChild(container);
+    this.container = container;
 }
 
-Component.prototype.binding = function() {
+Component.prototype.jsBinding = function() {
     let option = this.option;
     Object.keys(option.data).forEach(((prop, index) => {
         let that = this;
@@ -168,27 +170,67 @@ Component.prototype.binding = function() {
     }));
 }
 
-Component.prototype.render = function() {
-        if (this.notRendered) {
-            this.init();
-            this.notRendered = false;
-        }
-        let option = this.option;
-        let el = document.getElementById(option.id);
-        console.log('option', option);
-        if (!option.innerHTML) option.innerHTML = el.innerHTML;
-        let innerHTML = option.innerHTML;
-        let matches = innerHTML.match(/\{{2}\w*\}{2}/g);
-        if (matches) {
-            matches.forEach((match, mI) => {
-                let prop = match.replace(/\{|\}/g, '');
-                innerHTML = innerHTML.replace(new RegExp(match), option.data[prop]);
-            })
-        };
-        el.innerHTML = innerHTML;
+Component.prototype.createMatches = function() {
+    let template = this.option.template;
+
+    this.mathesVariables = template.match(/\{{2}\w*\}{2}/g);
+    this.matchesInputValue = template.match(/art-value="\w*"/g);
+    this.matchesBinds = template.match(/art-bind=".*"/g);
+    let el = document.querySelector(`[art-bind]`);
+    console.log('el', el);
+    if (el) {
+        let values = el.getAttribute('art-bind').split(',');
+        console.log('values', values);
+    }
+    
+    if(this.matchesBinds) {
+        this.matchesBinds.forEach((match, i) => {
+            
+        });
+    }
 }
 
-Component.prototype.close = function() {}
+Component.prototype.render = function() {
+        if (this.notRendered) {
+            this.createContainer();
+            this.notRendered = false;
+            this.renderedOnce = true;
+        }
+        this.container.innerHTML = this.createHtml(); 
+        this.htmlBinding();
+}
+
+Component.prototype.createHtml = function() {
+    let option = this.option;
+    let template = option.template;
+    if (this.mathesVariables) {
+        this.mathesVariables.forEach((match, mI) => {
+            let prop = match.replace(/\{|\}/g, '');
+            template = template.replace(new RegExp(match), option.data[prop]);
+        })
+    };
+    return template;
+}
+
+Component.prototype.htmlBinding = function() {
+    if (this.matchesInputValue) {
+        this.matchesInputValue.forEach((match, mI) => { 
+            let prop = match.replace(/art-value=|"/g, '');
+            let el = document.querySelector(`[${this.matchesInputValue}]`);
+            this.inputs[prop] = el;
+            el.addEventListener('keyup', (event) => {
+                this.option.data['_' + prop] = event.target.value;
+                this.render();
+            });
+        });
+    }
+}
+
+Component.prototype.close = function() {
+    Object.keys(this.inputs).forEach((el, index) => { 
+        el.removeEventListener('keyup');
+    })
+}
 
 /***/ })
 /******/ ]);

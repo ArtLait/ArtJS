@@ -1,6 +1,6 @@
-Art.js
+### Art.js
 
-Getting started
+### Getting started
 
 1) Install modules
     -npm install
@@ -16,6 +16,6 @@ Getting started
     - http-server
     - http://{you api}:8080)
 
-Demo:
+### Demo:
 
 https://artlait.github.io/ArtJS/

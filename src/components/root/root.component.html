@@ -1,5 +1,9 @@
 <h1>Hello, I am Art.js fraemwork!</h1>
-<div>
+<div>I am text in below: {{text}}</div>
+<input art-value="text" placeholder="Enter some text...">
+<div art-bind="message_1,message_2" some>
         {{message_1}} and I feel myself: {{message_2}}
 </div>
-<script src="./root.component.js"></script>
+<div art-bind="message_2" some>
+        {{message_1}} and I feel myself: {{message_2}}
+</div>
