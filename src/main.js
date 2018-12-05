@@ -7,4 +7,4 @@ let ArtModule = Art.createModule({
 });
 
 ArtModule.addComponent(rootComponent);
-ArtModule.addComponent(childComponent);
+//ArtModule.addComponent(childComponent);

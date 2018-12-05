@@ -133,6 +133,9 @@ Module.prototype.render = function() {
 
 "use strict";
 /* harmony export (immutable) */ __webpack_exports__["a"] = Component;
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__htmlParser__ = __webpack_require__(3);
+
+
 function Component(option, parentElement) {
     this.option = option;
     this.parentElement = parentElement;
@@ -144,11 +147,9 @@ function Component(option, parentElement) {
 }
 
 Component.prototype.createContainer = function() {
-    let container = document.createElement('div');
-    container.innerHTML = this.option.template;
-    container.id = this.option.id;
-    this.parentElement.appendChild(container);
-    this.container = container;
+    this.container = document.createElement('div');
+    this.container.id = this.option.id;
+    this.parentElement.appendChild(this.container);
 }
 
 Component.prototype.jsBinding = function() {
@@ -158,11 +159,9 @@ Component.prototype.jsBinding = function() {
         option.data['_' + prop] = option.data[prop];
         Object.defineProperty(option.data, prop, {
             get: function() {
-                console.log('get: ');
                 return this['_' + prop]
             },
             set: function(value) {
-                console.log('set: ', value);
                 this['_' + prop] = value;
                 that.render();
             }
@@ -176,27 +175,14 @@ Component.prototype.createMatches = function() {
     this.mathesVariables = template.match(/\{{2}\w*\}{2}/g);
     this.matchesInputValue = template.match(/art-value="\w*"/g);
     this.matchesBinds = template.match(/art-bind=".*"/g);
-    let el = document.querySelector(`[art-bind]`);
-    console.log('el', el);
-    if (el) {
-        let values = el.getAttribute('art-bind').split(',');
-        console.log('values', values);
-    }
-    
-    if(this.matchesBinds) {
-        this.matchesBinds.forEach((match, i) => {
-            
-        });
-    }
 }
 
 Component.prototype.render = function() {
         if (this.notRendered) {
             this.createContainer();
             this.notRendered = false;
-            this.renderedOnce = true;
         }
-        this.container.innerHTML = this.createHtml(); 
+        this.container.innerHTML = this.createHtml();
         this.htmlBinding();
 }
 
@@ -209,12 +195,18 @@ Component.prototype.createHtml = function() {
             template = template.replace(new RegExp(match), option.data[prop]);
         })
     };
+    template.replace(/<[^>]*>/)
     return template;
 }
-
 Component.prototype.htmlBinding = function() {
+    this.virtualDom = {};
+    let template = this.option.template;
+    let {listOfTags, listOfProps} = __WEBPACK_IMPORTED_MODULE_0__htmlParser__["a" /* parseTemplate */](template);
+    console.log('listOfTags', listOfTags);
+    console.log('listOfProps', listOfProps);
+    
     if (this.matchesInputValue) {
-        this.matchesInputValue.forEach((match, mI) => { 
+        this.matchesInputValue.forEach((match, mI) => {
             let prop = match.replace(/art-value=|"/g, '');
             let el = document.querySelector(`[${this.matchesInputValue}]`);
             this.inputs[prop] = el;
@@ -230,6 +222,118 @@ Component.prototype.close = function() {
     Object.keys(this.inputs).forEach((el, index) => { 
         el.removeEventListener('keyup');
     })
+}
+
+/***/ }),
+/* 3 */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+/* harmony export (immutable) */ __webpack_exports__["a"] = parseTemplate;
+function detectNameOfTagAndAttributes(template, startIndex) {
+    let tagName = '';
+    for (let i = startIndex; i < template.length; i++) {
+        if (template[i] !== '>' && template[i] !== '') 
+            tagName += template[i]
+        else 
+            return tagName;
+    }
+}
+
+function getTag(tagNameAndAttributes) {
+    return tagNameAndAttributes.match(/^\S*/)[0];
+}
+
+function getAttributes(tagNameAndAttributes) {
+    let attrubuteStrings = tagNameAndAttributes.match(/\S+=['"][^'"]*['"]/g);
+    let attributes = {};
+    if (attrubuteStrings) {
+        attrubuteStrings.forEach((attr) => {
+            let name = attr.match(/^[\w-]*/)[0];
+            let value = attr.slice(name.length + 2).match(/[^"']*/)[0];
+            attributes[name] = value;
+        })
+    }
+    return attributes;
+}
+
+function parseTemplate(template) {
+    let listOfTags = {};
+    let listOfProps = {};
+    for (let i = 0; i < template.length; i++) {
+        var newTag;
+        if (template[i] === '<' && template[i + 1] !== '/') {
+            newTag = separateByTag(template, i);
+            listOfTags[newTag.name + i] = newTag;
+        }
+        
+        if (template[i] + template[i + 1] === '{{') {
+            let newProp = createProp(template, i + 2);
+            listOfProps[newProp] = {
+                value: newProp,
+                currentTag: newTag ? newTag : null
+            }
+        }
+    }
+    return {listOfTags, listOfProps}
+}
+
+function separateByTag(template, i) {
+    
+        let tagNameAndAttributes = detectNameOfTagAndAttributes(template, i + 1);
+        let tagName = getTag(tagNameAndAttributes);
+        let attributes = getAttributes(tagNameAndAttributes.slice(tagName.length));
+        let tagValue = createTag(template, tagName, i);
+        return {
+            name,
+            value: tagValue,
+            attributes: attributes,
+            toString() {
+                return this.value;
+            }
+        }
+}
+
+function createProp(template, indexProp) {
+    let newProp = '';
+    for (let i = indexProp; i < template.length; i++) {
+        if (template[i] + template[i + 1] === '}}') {
+            return newProp;
+        }
+        newProp += template[i];
+    }
+    throw "Curly brackets have not end"
+}
+
+function createTag(template, tagName, startIndex) {
+    let tag = '';
+    let countOfInnerTags = 0;
+    for (let i = startIndex; i < template.length; i++) {
+ //       console.log('template[i]', template[i], 'tagName[0]', tagName[0], template[i] == tagName[0]);
+
+        if (template[i] === tagName[0] && checkForTag(template, i, tagName)) {
+            countOfInnerTags = getCountOfInnerTags(template, i, countOfInnerTags);
+            if (countOfInnerTags === 0) {
+                tag += tagName + '>';
+                break;
+            }
+        }
+        tag += template[i];
+    }
+    return tag;
+}
+
+function getCountOfInnerTags(template, i, countOfInnerTags) {
+    return template[i - 1] === '/' ? --countOfInnerTags : ++countOfInnerTags;
+}
+
+function checkForTag(template, indexForStr, tagName) {
+    for (let i = 0; i < tagName.length; i++) {
+        if (tagName[i] !== template[indexForStr + i]) {
+            return false
+        }
+    }
+    return true
 }
 
 /***/ })

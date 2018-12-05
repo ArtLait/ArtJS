@@ -1,3 +1,5 @@
+import { parseTemplate } from './htmlParser';
+
 export function Component(option, parentElement) {
     this.option = option;
     this.parentElement = parentElement;
@@ -9,11 +11,9 @@ export function Component(option, parentElement) {
 }
 
 Component.prototype.createContainer = function() {
-    let container = document.createElement('div');
-    container.innerHTML = this.option.template;
-    container.id = this.option.id;
-    this.parentElement.appendChild(container);
-    this.container = container;
+    this.container = document.createElement('div');
+    this.container.id = this.option.id;
+    this.parentElement.appendChild(this.container);
 }
 
 Component.prototype.jsBinding = function() {
@@ -23,11 +23,9 @@ Component.prototype.jsBinding = function() {
         option.data['_' + prop] = option.data[prop];
         Object.defineProperty(option.data, prop, {
             get: function() {
-                console.log('get: ');
                 return this['_' + prop]
             },
             set: function(value) {
-                console.log('set: ', value);
                 this['_' + prop] = value;
                 that.render();
             }
@@ -41,27 +39,14 @@ Component.prototype.createMatches = function() {
     this.mathesVariables = template.match(/\{{2}\w*\}{2}/g);
     this.matchesInputValue = template.match(/art-value="\w*"/g);
     this.matchesBinds = template.match(/art-bind=".*"/g);
-    let el = document.querySelector(`[art-bind]`);
-    console.log('el', el);
-    if (el) {
-        let values = el.getAttribute('art-bind').split(',');
-        console.log('values', values);
-    }
-    
-    if(this.matchesBinds) {
-        this.matchesBinds.forEach((match, i) => {
-            
-        });
-    }
 }
 
 Component.prototype.render = function() {
         if (this.notRendered) {
             this.createContainer();
             this.notRendered = false;
-            this.renderedOnce = true;
         }
-        this.container.innerHTML = this.createHtml(); 
+        this.container.innerHTML = this.createHtml();
         this.htmlBinding();
 }
 
@@ -74,12 +59,18 @@ Component.prototype.createHtml = function() {
             template = template.replace(new RegExp(match), option.data[prop]);
         })
     };
+    template.replace(/<[^>]*>/)
     return template;
 }
-
 Component.prototype.htmlBinding = function() {
+    this.virtualDom = {};
+    let template = this.option.template;
+    let {listOfTags, listOfProps} = parseTemplate(template);
+    console.log('listOfTags', listOfTags);
+    console.log('listOfProps', listOfProps);
+    
     if (this.matchesInputValue) {
-        this.matchesInputValue.forEach((match, mI) => { 
+        this.matchesInputValue.forEach((match, mI) => {
             let prop = match.replace(/art-value=|"/g, '');
             let el = document.querySelector(`[${this.matchesInputValue}]`);
             this.inputs[prop] = el;
