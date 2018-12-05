@@ -36,7 +36,7 @@ HtmlParser.prototype.parse = function(templateBase) {
     let listOfTags = {};
     let listOfProps = {};
     for (this.i = 0; this.i < this.template.length; this.i++) {
-        let newTag; let i = this.i; let template = this.template; 
+        var newTag; let i = this.i; let template = this.template; 
         if (template[i] === '<' && template[i + 1] !== '/') {
             newTag = this.separateByTag(template, i);
             listOfTags[newTag.name + i] = newTag;

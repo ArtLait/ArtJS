@@ -48,6 +48,7 @@ Component.prototype.render = function() {
             this.notRendered = false;
         }
         this.container.innerHTML = this.createHtml();
+        this.addHandlers();
 }
 
 Component.prototype.createHtml = function() {
@@ -59,9 +60,9 @@ Component.prototype.createHtml = function() {
             template = template.replace(new RegExp(match), option.data[prop]);
         })
     };
-    template.replace(/<[^>]*>/)
     return template;
 }
+
 Component.prototype.htmlBinding = function() {
     this.virtualDom = {};
     let template = this.option.template;
@@ -70,7 +71,9 @@ Component.prototype.htmlBinding = function() {
     let {listOfTags, listOfProps} = htmlParser.parse(template);
     console.log('listOfTags', listOfTags);
     console.log('listOfProps', listOfProps);
-    
+}
+
+Component.prototype.addHandlers = function() {
     // if (this.matchesInputValue) {
     //     this.matchesInputValue.forEach((match, mI) => {
     //         let prop = match.replace(/art-value=|"/g, '');
