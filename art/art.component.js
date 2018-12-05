@@ -1,4 +1,4 @@
-import { parseTemplate } from './htmlParser';
+import { HtmlParser } from './htmlParser';
 
 export function Component(option, parentElement) {
     this.option = option;
@@ -44,10 +44,10 @@ Component.prototype.createMatches = function() {
 Component.prototype.render = function() {
         if (this.notRendered) {
             this.createContainer();
+            this.htmlBinding();
             this.notRendered = false;
         }
         this.container.innerHTML = this.createHtml();
-        this.htmlBinding();
 }
 
 Component.prototype.createHtml = function() {
@@ -65,21 +65,23 @@ Component.prototype.createHtml = function() {
 Component.prototype.htmlBinding = function() {
     this.virtualDom = {};
     let template = this.option.template;
-    let {listOfTags, listOfProps} = parseTemplate(template);
+    
+    let htmlParser = new HtmlParser({addToTagsElementArtId: true});
+    let {listOfTags, listOfProps} = htmlParser.parse(template);
     console.log('listOfTags', listOfTags);
     console.log('listOfProps', listOfProps);
     
-    if (this.matchesInputValue) {
-        this.matchesInputValue.forEach((match, mI) => {
-            let prop = match.replace(/art-value=|"/g, '');
-            let el = document.querySelector(`[${this.matchesInputValue}]`);
-            this.inputs[prop] = el;
-            el.addEventListener('keyup', (event) => {
-                this.option.data['_' + prop] = event.target.value;
-                this.render();
-            });
-        });
-    }
+    // if (this.matchesInputValue) {
+    //     this.matchesInputValue.forEach((match, mI) => {
+    //         let prop = match.replace(/art-value=|"/g, '');
+    //         let el = document.querySelector(`[${this.matchesInputValue}]`);
+    //         this.inputs[prop] = el;
+    //         el.addEventListener('keyup', (event) => {
+    //             this.option.data['_' + prop] = event.target.value;
+    //             this.render();
+    //         });
+    //     });
+    // }
 }
 
 Component.prototype.close = function() {

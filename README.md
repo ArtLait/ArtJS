@@ -19,3 +19,5 @@
 ### Demo:
 
 https://artlait.github.io/ArtJS/
+
+Open console(F12 in Chrome) for look some intermidiate results
