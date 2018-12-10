@@ -7,12 +7,14 @@ let component = {
     data: {
         message_1: 'I am \'#app\'',
         message_2: 'very wondefull',
+        message_3: 'test message',
         text: ''
     },
     methods: {
         init: function() {                    
             setTimeout(() => {
                 this.message_1 = 'It is wizzard of bindings!';
+                this.message_3 = 'changed'
             }, 1000);
         }
     }

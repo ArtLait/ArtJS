@@ -23,7 +23,6 @@ Module.prototype.init = function() {
             },
             set: function(component) {
                 this._components.push(component);
-                component.render();
             }
         }
     });

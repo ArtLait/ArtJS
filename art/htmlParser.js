@@ -8,7 +8,7 @@ HtmlParser.prototype.detectNameOfTagAndAttributes = function(template, startInde
     }
 }
 
-HtmlParser.prototype.getTag = function(tagNameAndAttributes) {
+HtmlParser.prototype.getTagName = function(tagNameAndAttributes) {
     return tagNameAndAttributes.match(/^\S*/)[0];
 }
 
@@ -33,25 +33,16 @@ export function HtmlParser(option) {
 
 HtmlParser.prototype.parse = function(templateBase) {
     this.template = templateBase;
-    let listOfTags = {};
-    let listOfProps = {};
+    this.listOfTags = {};
+    this.listOfProps = {};
     for (this.i = 0; this.i < this.template.length; this.i++) {
         var newTag; let i = this.i; let template = this.template; 
         if (template[i] === '<' && template[i + 1] !== '/') {
-            newTag = this.separateByTag(template, i);
-            listOfTags[newTag.name + i] = newTag;
-        }
-        
-        if (template[i] + template[i + 1] === '{{') {
-            let newProp = this.createProp(template, i + 2);
-            listOfProps[newProp] = {
-                value: newProp,
-                currentTag: newTag ? newTag : null
-            }
+            newTag = this.createTag(template, i);
+            this.listOfTags[newTag.artId] = newTag;
         }
     }
     console.log(this.template);
-    return {listOfTags, listOfProps}
 }
 
 HtmlParser.prototype.addArtIdsForNewTemplate = function(tag) {
@@ -66,16 +57,20 @@ HtmlParser.prototype.addArtIdsForNewTemplate = function(tag) {
     }
 }
 
-HtmlParser.prototype.separateByTag = function(template, i) {
+HtmlParser.prototype.createTag = function(template, i) {
     
     let tagNameAndAttributes = this.detectNameOfTagAndAttributes(template, i + 1);
-    let tagName = this.getTag(tagNameAndAttributes);
+    let tagName = this.getTagName(tagNameAndAttributes);
+    
     let artId = this.addArtIdsForNewTemplate(tagName);
     let attributes = this.getAttributes(tagNameAndAttributes.slice(tagName.length));
     attributes.artId = artId;
-    let tagValue = this.createTag(template, tagName, i);
+    this.currentArtId = artId;
+    let [tagValue, arrayValue] = this.handleTag(template, tagName, i);
     return {
+        artId,
         name: tagName,
+        arrayValue,
         value: tagValue,
         attributes: attributes,
         toString() {
@@ -95,11 +90,30 @@ HtmlParser.prototype.createProp = function(template, indexProp) {
     throw "Curly brackets have not end"
 }
 
-HtmlParser.prototype.createTag = function(template, tagName, startIndex) {
-    let tag = '';
-    let countOfInnerTags = 0;
+HtmlParser.prototype.setProps = function(template, i, indexOfArrayTag) {
+    if (template[i] + template[i + 1] === '{{') {
+        let newProp = this.createProp(template, i + 2);
+        if (!this.listOfProps[newProp]) 
+            this.listOfProps[newProp] = {
+                value: newProp,
+                artId: this.currentArtId ? this.currentArtId : null,
+                indexOfArrayTag: indexOfArrayTag
+            }
+        else {
+            this.listOfProps[newProp] = [this.listOfProps[newProp]];
+            this.listOfProps[newProp].push({
+                value: newProp,
+                artId: this.currentArtId ? this.currentArtId : null,
+                indexOfArrayTag: indexOfArrayTag
+            });
+        }
+    }
+}
+
+HtmlParser.prototype.handleTag = function(template, tagName, startIndex) {
+    let tag = ''; let arrayTag = [];
+    let countOfInnerTags = 0; let indexOfArrayTag = -1; var j;
     for (let i = startIndex; i < template.length; i++) {
- //       console.log('template[i]', template[i], 'tagName[0]', tagName[0], template[i] == tagName[0]);
 
         if (template[i] === tagName[0] && this.checkForTag(template, i, tagName)) {
             countOfInnerTags = this.getCountOfInnerTags(template, i, countOfInnerTags);
@@ -107,10 +121,30 @@ HtmlParser.prototype.createTag = function(template, tagName, startIndex) {
                 tag += tagName + '>';
                 break;
             }
+            arrayTag[++indexOfArrayTag] = {value: '', props: []}; j = i;
+            this.indexOfArrayTag = indexOfArrayTag;
         }
+        this.setProps(template, i, indexOfArrayTag);
         tag += template[i];
+        if (i > j + tagName.length && template[i] != '<' && template[i] != '/') {
+            if (template[i] + template[i + 1] === '{{') {
+
+                arrayTag[indexOfArrayTag].props.push(this.getPropsOfNode(template, i + 2));
+            }
+            arrayTag[indexOfArrayTag].value += template[i];
+        }
     }
-    return tag;
+    return [tag, arrayTag];
+}
+
+HtmlParser.prototype.getPropsOfNode = function(template, i) {
+        let newProps = '';
+        for (; i < template.length; i++) {
+            if (template[i] === '}') {
+                return newProps;
+            }
+            newProps += template[i];
+        }
 }
 
 HtmlParser.prototype.getCountOfInnerTags = function(template, i, countOfInnerTags) {
