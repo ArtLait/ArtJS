@@ -164,7 +164,7 @@ Component.prototype.jsBinding = function() {
             },
             set: function(value) {
                 this['_' + prop] = value;
-                that.render(prop, value);
+                that.render(prop);
             }
         });
     }));
@@ -210,28 +210,36 @@ Component.prototype.htmlBinding = function() {
     console.log('listOfProps', this.listOfProps);
 }
 
-Component.prototype.render = function(prop, value) {
+Component.prototype.render = function(prop) {
     
     let virtualEl = this.listOfProps[prop];
+    let input = this.inputs[prop];
+    if (input) input.value = this.data[prop];
+    if (!virtualEl) return;
     if (virtualEl.length !== undefined) {
-        virtualEl.forEach((item) => {
-            this.renderEl(item, prop, value);
+        virtualEl.forEach((item, i) => {
+            this.renderEl(item, i);
         })
     }
     else {
-        this.renderEl(virtualEl, prop, value);
+        this.renderEl(virtualEl);
     }
 }
 
-Component.prototype.renderEl = function(virtualEl, prop, value) {
+Component.prototype.renderEl = function(virtualEl, indexProp) {
     let id = virtualEl.artId;
     let index = virtualEl.indexOfArrayTag;
-    let virtualNodes = this.listOfTags[id].arrayValue[index];
-    let newNode = virtualNodes.value.replace(`{{${prop}}}`, value);
-    virtualNodes.props.forEach((item) => {
-        if (item !== prop) {
-            newNode = newNode.replace(`{{${item}}}`, this.data[item]);
+    let virtualNodes = this.listOfTags[id].nodes[index];
+    let newNode = '';
+    virtualNodes.props.forEach((item, i, arr) => {
+        let prop = this.listOfProps[item];
+        if (prop.length !== undefined) {
+            prop = prop[indexProp];
         }
+        let { strBefore, strAfter } = prop;
+
+        newNode += strBefore + this.data[item];
+        newNode += i === arr.length - 1 ? strAfter : '';      
     });
     
     let el = document.querySelector(`[art-id="${id}"]`);
@@ -331,11 +339,11 @@ HtmlParser.prototype.createTag = function(template, i) {
     let attributes = this.getAttributes(tagNameAndAttributes.slice(tagName.length));
     attributes.artId = artId;
     this.currentArtId = artId;
-    let [tagValue, arrayValue] = this.handleTag(template, tagName, i);
+    let [tagValue, nodes] = this.handleTag(template, tagName, i);
     return {
         artId,
         name: tagName,
-        arrayValue,
+        nodes,
         value: tagValue,
         attributes: attributes,
         toString() {
@@ -344,72 +352,91 @@ HtmlParser.prototype.createTag = function(template, i) {
     }
 }
 
-HtmlParser.prototype.createProp = function(template, indexProp) {
-    let newProp = '';
+HtmlParser.prototype.generateProp = function(template, indexProp) {
+    let newPropName = ''; let newPropNameNotSetted = true;
+    let strAfterProp = '';
     for (let i = indexProp; i < template.length; i++) {
-        if (template[i] + template[i + 1] === '}}') {
-            return newProp;
+        if (template[i] + template[i + 1] === '}}' && newPropNameNotSetted) {
+            newPropNameNotSetted = false; i += 2;
         }
-        newProp += template[i];
+        if (newPropNameNotSetted) {
+            newPropName += template[i];
+        }
+        else {
+            if (template[i] === '<' || template[i] + template[i + 1] === '{{') 
+                return { newPropName, strAfterProp }; 
+            strAfterProp += template[i];
+        }
     }
     throw "Curly brackets have not end"
 }
 
-HtmlParser.prototype.setProps = function(template, i, indexOfArrayTag) {
+HtmlParser.prototype.setProps = function(template, i, indexOfArrayTag, countOfInnerTags, firstIndexOfTag) {
+    if (countOfInnerTags !== 1) {
+        return
+    }
+    if (!this.indexStrBefore) this.indexStrBefore = firstIndexOfTag
     if (template[i] + template[i + 1] === '{{') {
-        let newProp = this.createProp(template, i + 2);
-        if (!this.listOfProps[newProp]) 
-            this.listOfProps[newProp] = {
-                value: newProp,
-                artId: this.currentArtId ? this.currentArtId : null,
-                indexOfArrayTag: indexOfArrayTag
-            }
+        let {newPropName, strAfterProp} = this.generateProp(template, i + 2);
+        let endIndex = i + 2 + newPropName.length - 1;
+        
+        let newProp = {
+            value: newPropName,
+            artId: this.currentArtId ? this.currentArtId : null,
+            indexOfArrayTag: indexOfArrayTag,
+            startIndex: i + 2,
+            endIndex,
+            strBefore: template.slice(this.indexStrBefore, i),
+            strAfter: strAfterProp
+        };
+        this.indexStrBefore = newProp.endIndex + 3;
+        if (!this.listOfProps[newPropName])
+            this.listOfProps[newPropName] = newProp
         else {
-            this.listOfProps[newProp] = [this.listOfProps[newProp]];
-            this.listOfProps[newProp].push({
-                value: newProp,
-                artId: this.currentArtId ? this.currentArtId : null,
-                indexOfArrayTag: indexOfArrayTag
-            });
+            this.listOfProps[newPropName] = [this.listOfProps[newPropName]];
+            this.listOfProps[newPropName].push(newProp);
         }
     }
 }
 
 HtmlParser.prototype.handleTag = function(template, tagName, startIndex) {
-    let tag = ''; let arrayTag = [];
-    let countOfInnerTags = 0; let indexOfArrayTag = -1; var j;
+    let tag = ''; let arrayTag = [];this.currentTagName = tagName;
+    let countOfInnerTags = 0; let indexOfArrayTag = -1; let firstIndexOfTag; let startOfNode;
     for (let i = startIndex; i < template.length; i++) {
-
-        if (template[i] === tagName[0] && this.checkForTag(template, i, tagName)) {
+        
+        if ( (template[i - 1] == '<' && template[i] != '/') || (template[i - 2] + template[i - 1] == '</')) {
+            this.currentTagName = this.getCurrentTag(template, i);
             countOfInnerTags = this.getCountOfInnerTags(template, i, countOfInnerTags);
             if (countOfInnerTags === 0) {
                 tag += tagName + '>';
                 break;
             }
-            arrayTag[++indexOfArrayTag] = {value: '', props: []}; j = i;
-            this.indexOfArrayTag = indexOfArrayTag;
+            arrayTag[++indexOfArrayTag] = {value: '', props: []}; firstIndexOfTag = i;
         }
-        this.setProps(template, i, indexOfArrayTag);
+        if (template[i - 1] === '>') startOfNode = i; 
         tag += template[i];
-        if (i > j + tagName.length && template[i] != '<' && template[i] != '/') {
+        var indexStartInnerOfTag = firstIndexOfTag + this.currentTagName.length + 1;
+        if (i >= indexStartInnerOfTag && template[i] != '<' && template[i] != '/') {
+            
             if (template[i] + template[i + 1] === '{{') {
-
+                this.setProps(template, i, indexOfArrayTag, countOfInnerTags, startOfNode);
                 arrayTag[indexOfArrayTag].props.push(this.getPropsOfNode(template, i + 2));
             }
             arrayTag[indexOfArrayTag].value += template[i];
         }
     }
+    this.indexStrBefore = null;
     return [tag, arrayTag];
 }
 
 HtmlParser.prototype.getPropsOfNode = function(template, i) {
-        let newProps = '';
-        for (; i < template.length; i++) {
-            if (template[i] === '}') {
-                return newProps;
-            }
-            newProps += template[i];
+    let newProps = '';
+    for (; i < template.length; i++) {
+        if (template[i] === '}') {
+            return newProps;
         }
+        newProps += template[i];
+    }
 }
 
 HtmlParser.prototype.getCountOfInnerTags = function(template, i, countOfInnerTags) {
@@ -423,6 +450,10 @@ HtmlParser.prototype.checkForTag = function(template, indexForStr, tagName) {
         }
     }
     return true
+}
+
+HtmlParser.prototype.getCurrentTag = function(template, indexForStr) {
+    return template.slice(indexForStr).match(/^\w*/)[0];
 }
 
 /***/ })

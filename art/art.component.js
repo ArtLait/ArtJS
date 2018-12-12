@@ -29,7 +29,7 @@ Component.prototype.jsBinding = function() {
             },
             set: function(value) {
                 this['_' + prop] = value;
-                that.render(prop, value);
+                that.render(prop);
             }
         });
     }));
@@ -75,28 +75,36 @@ Component.prototype.htmlBinding = function() {
     console.log('listOfProps', this.listOfProps);
 }
 
-Component.prototype.render = function(prop, value) {
+Component.prototype.render = function(prop) {
     
     let virtualEl = this.listOfProps[prop];
+    let input = this.inputs[prop];
+    if (input) input.value = this.data[prop];
+    if (!virtualEl) return;
     if (virtualEl.length !== undefined) {
-        virtualEl.forEach((item) => {
-            this.renderEl(item, prop, value);
+        virtualEl.forEach((item, i) => {
+            this.renderEl(item, i);
         })
     }
     else {
-        this.renderEl(virtualEl, prop, value);
+        this.renderEl(virtualEl);
     }
 }
 
-Component.prototype.renderEl = function(virtualEl, prop, value) {
+Component.prototype.renderEl = function(virtualEl, indexProp) {
     let id = virtualEl.artId;
     let index = virtualEl.indexOfArrayTag;
-    let virtualNodes = this.listOfTags[id].arrayValue[index];
-    let newNode = virtualNodes.value.replace(`{{${prop}}}`, value);
-    virtualNodes.props.forEach((item) => {
-        if (item !== prop) {
-            newNode = newNode.replace(`{{${item}}}`, this.data[item]);
+    let virtualNodes = this.listOfTags[id].nodes[index];
+    let newNode = '';
+    virtualNodes.props.forEach((item, i, arr) => {
+        let prop = this.listOfProps[item];
+        if (prop.length !== undefined) {
+            prop = prop[indexProp];
         }
+        let { strBefore, strAfter } = prop;
+
+        newNode += strBefore + this.data[item];
+        newNode += i === arr.length - 1 ? strAfter : '';      
     });
     
     let el = document.querySelector(`[art-id="${id}"]`);

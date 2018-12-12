@@ -14,6 +14,7 @@ let component = {
         init: function() {                    
             setTimeout(() => {
                 this.message_1 = 'It is wizzard of bindings!';
+                this.text = '12';
                 this.message_3 = 'changed'
             }, 1000);
         }
